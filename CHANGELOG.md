@@ -1,5 +1,12 @@
 # sharesniffer Change Log
 
+## [0.1-b.9] = 2024-09-05
+### changed
+- New Argument (--nmapdatadir): Users can specify their own NSE script directory using this argument. If they don't, the script will look for it in default directories.
+- Directory Check: If the user provides a directory that doesn’t exist, the script will notify them and exit.
+- Dynamic NSE Script Path Detection: If no custom path is given, the script will try to locate it using common paths (/usr/local/share/nmap/scripts, /usr/share/nmap/scripts).
+- Error Handling for Missing Directories: If the script cannot find the NSE script directory, it will exit with an error message.
+
 ## [0.1-b.8] = 2018-07-02
 ### fixed
 - bug fix for traceback TypeError in get_nfs_shares function (pyneda pr d0f5888)
