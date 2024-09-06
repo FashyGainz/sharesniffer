@@ -6,6 +6,7 @@
 - Directory Check: If the user provides a directory that doesn’t exist, the script will notify them and exit.
 - Dynamic NSE Script Path Detection: If no custom path is given, the script will try to locate it using common paths (/usr/local/share/nmap/scripts, /usr/share/nmap/scripts).
 - Error Handling for Missing Directories: If the script cannot find the NSE script directory, it will exit with an error message.
+- Created .todos file
 
 ## [0.1-b.8] = 2018-07-02
 ### fixed
