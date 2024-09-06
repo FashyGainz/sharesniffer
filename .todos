@@ -1,0 +1,6 @@
+- Add concurrency
+  - sniffer
+  - specify threads
+  - concurrent futures
+
+- Add extra error handling and logging
