@@ -406,7 +406,6 @@ def auto_mounter(shares):
 
 
 if __name__ == "__main__":
-
     # default mount options (optimized for crawling)
     mntopt_nfs = "ro,nosuid,nodev,noexec,udp,proto=udp,noatime,nodiratime,rsize=1024,dsize=1024,vers=3,rdirplus"
     mntopt_smb = "ro,nosuid,nodev,noexec,udp,proto=udp,noatime,nodiratime,rsize=1024,dsize=1024"
@@ -426,7 +425,7 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--smb", action="store_true",
                         help="Scan network for smb shares")
     parser.add_argument("--smbmntopt", metavar="SMBMNTOPT", default=mntopt_smb,
-                        help = "smb mount options (default: "+mntopt_smb+")")
+                        help="smb mount options (default: "+mntopt_smb+")")
     parser.add_argument("--smbtype", metavar='SMBTYPE', default="smbfs",
                         help="Can be smbfs (default) or cifs")
     parser.add_argument("--smbuser", metavar='SMBUSER', default="guest",
@@ -440,11 +439,13 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--mountprefix", metavar="MOUNTPREFIX", default="sharesniffer",
                         help="Prefix for mountpoint directory name (default: sharesniffer)")
     parser.add_argument("-v", "--verbose", action="store_true",
-                       help="Increase output verbosity")
+                        help="Increase output verbosity")
     parser.add_argument("--debug", action="store_true",
                         help="Debug message output")
     parser.add_argument("-q", "--quiet", action="store_true",
                         help="Run quiet and just print out any possible mount points for crawling")
+    parser.add_argument("--nmapdatadir", metavar="NMAPDATADIR", default=None,
+                        help="Path to the Nmap NSE script directory (optional)")
     parser.add_argument("-V", "--version", action="version",
                         version="sharesniffer v%s" % SHARESNIFFER_VERSION,
                         help="Prints version and exits")
@@ -499,15 +500,23 @@ if __name__ == "__main__":
         print(banner + '\n')
 
     # check for Nmap nse scripts directory
-    nmapdatadir = None
-    nmap_script_dirs = ['/usr/local/share/nmap/scripts', '/usr/share/nmap/scripts']
-    for path in nmap_script_dirs:
-        if os.path.isdir(path):
-            nmapdatadir = path
-            break
-    if not nmapdatadir:
-        print("Unable to locate nmap nse scripts directory")
-        sys.exit(1)
+    if args.nmapdatadir:
+        if os.path.isdir(args.nmapdatadir):
+            nmapdatadir = args.nmapdatadir
+        else:
+            print("Provided Nmap NSE script directory does not exist: %s" % args.nmapdatadir)
+            sys.exit(1)
+    else:
+        nmapdatadir = None
+        nmap_script_dirs = ['/usr/local/share/nmap/scripts', '/usr/share/nmap/scripts']
+        for path in nmap_script_dirs:
+            if os.path.isdir(path):
+                nmapdatadir = path
+                break
+        if not nmapdatadir:
+            print("Unable to locate nmap nse scripts directory")
+            sys.exit(1)
+
     logger.debug('Nmap datadir: ' + nmapdatadir)
 
     # get shares and mountpoints
