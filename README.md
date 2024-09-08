@@ -36,10 +36,10 @@ python sharesniffer.py -l 4 --hosts 192.168.56.0/24 -e 192.168.56.1,192.168.56.2
 ### Download
 
 ```shell
-$ git clone https://github.com/shirosaidev/sharesniffer.git
+$ git clone https://github.com/FashyGainz/sharesniffer.git
 $ cd sharesniffer
 ```
-[Download latest version](https://github.com/shirosaidev/sharesniffer/releases/latest)
+[Download latest version](https://github.com/FashyGainz/sharesniffer/releases/latest)
 
 
 ### CLI Options
