@@ -87,34 +87,39 @@ class sniffer:
             self.nmapargs = '-n -T'+t+' -Pn -PS111,445 --open --min-parallelism '+min_p+' --max-parallelism '+max_p+' ' \
                             '--max-retries '+max_ret+' --min-rate '+min_r+' --max-rate '+max_r+' --host-timeout '+host_t
 
-    def get_nfs_shares(self, hostlist):
-        nfsshares = []
-        for host in hostlist:
-            shares = {'host': host, 'openshares': [], 'closedshares': []}
-            output = self.nm.scan(host, '111',
-                                  arguments='%s --datadir %s --script %s/nfs-showmount.nse,%s/nfs-ls.nse'
-                                            % (self.nmapargs, nmapdatadir, nmapdatadir, nmapdatadir))
-            logger.debug('nm scan output: ' + str(output))
-            try:
-                nfsshowmount = output['scan'][host]['tcp'][111]['script']['nfs-showmount'].strip().split('\n')
-                nfsls = output['scan'][host]['tcp'][111]['script']['nfs-ls'].strip().split('\n')
-            except KeyError:
-                print('%s PORT 111/tcp OPEN (rpcbind) but no results from nse script' % host)
-                continue
-            openshares = []
-            closedshares = []
-            sharedict = {'sharename': nfsshowmount[0].strip().split(' ')[0]}
-            if re.search(r'ERROR: Mount failed: Permission denied', nfsls[4]):
-                closedshares.append(sharedict)
-                continue
-            else:
-                openshares.append(sharedict)
-            for share in openshares:
-                shares['openshares'].append(share['sharename'])
-            for share in closedshares:
-                shares['closedshares'].append(share['sharename'])
-            nfsshares.append(shares)
-        return nfsshares
+def get_nfs_shares(self, hostlist):
+    nfsshares = []
+    for host in hostlist:
+        shares = {'host': host, 'openshares': [], 'closedshares': []}
+        output = self.nm.scan(host, '111',
+                              arguments='%s --datadir %s --script %s/nfs-showmount.nse,%s/nfs-ls.nse'
+                                        % (self.nmapargs, nmapdatadir, nmapdatadir, nmapdatadir))
+        logger.debug('nm scan output: ' + str(output))
+        try:
+            nfsshowmount = output['scan'][host]['tcp'][111]['script']['nfs-showmount'].strip().split('\n')
+            nfsls = output['scan'][host]['tcp'][111]['script']['nfs-ls'].strip().split('\n')
+        except KeyError:
+            print('%s PORT 111/tcp OPEN (rpcbind) but no results from nse script' % host)
+            continue
+
+        openshares = []
+        closedshares = []
+        sharedict = {'sharename': nfsshowmount[0].strip().split(' ')[0]}
+        
+        # Ensure the list has at least 5 elements before accessing nfsls[4]
+        if len(nfsls) > 4 and re.search(r'ERROR: Mount failed: Permission denied', nfsls[4]):
+            closedshares.append(sharedict)
+            continue
+        else:
+            openshares.append(sharedict)
+        
+        for share in openshares:
+            shares['openshares'].append(share['sharename'])
+        for share in closedshares:
+            shares['closedshares'].append(share['sharename'])
+        nfsshares.append(shares)
+        
+    return nfsshares
 
     def get_smb_shares(self, hostlist):
         smbshares = []
