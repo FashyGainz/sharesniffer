@@ -39,6 +39,8 @@ SHARESNIFFER_VERSION = '0.1-b.8'
 __version__ = SHARESNIFFER_VERSION
 
 
+import ipaddress  # Add this import to handle CIDR blocks
+
 class sniffer:
     def __init__(self, hosts=None, excludehosts=None, nfs=False, smb=False, smbuser='guest', smbpass='', max_workers=10, speedlevel=4):
         self.hosts = hosts
@@ -82,12 +84,17 @@ class sniffer:
 
     def expand_cidr(self, hosts):
         """ Expands a CIDR range into individual IPs. """
-        try:
-            ip_network = ipaddress.ip_network(hosts, strict=False)  # Expand network range
-            return [str(ip) for ip in ip_network.hosts()]
-        except ValueError as e:
-            logger.error(f"Invalid CIDR notation: {hosts} - {e}")
-            return []
+        expanded_ips = []
+        for host in hosts.split():
+            if '/' in host:  # If CIDR notation is present
+                try:
+                    ip_network = ipaddress.ip_network(host, strict=False)
+                    expanded_ips.extend([str(ip) for ip in ip_network.hosts()])
+                except ValueError as e:
+                    logger.error(f"Invalid CIDR notation: {host} - {e}")
+            else:
+                expanded_ips.append(host)
+        return expanded_ips
 
     def scan_host(self, host):
         """ Scans a single host and returns NFS/SMB open ports. """
@@ -114,13 +121,8 @@ class sniffer:
         else:
             hosts = self.hosts
 
-        # Expand CIDR ranges into individual IP addresses
-        expanded_hosts = []
-        for host in hosts.split():
-            if '/' in host:  # If CIDR notation is present
-                expanded_hosts.extend(self.expand_cidr(host))
-            else:
-                expanded_hosts.append(host)
+        # Expand any CIDR ranges into individual IP addresses
+        expanded_hosts = self.expand_cidr(hosts)
 
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             future_to_host = {executor.submit(self.scan_host, host): host for host in expanded_hosts}
