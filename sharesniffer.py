@@ -30,6 +30,7 @@ import re
 import subprocess
 import os
 import sys
+import ipaddress
 from random import randint
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -49,7 +50,7 @@ class sniffer:
         self.nm = nmap.PortScanner()
         self.max_workers = max_workers
         self.speedlevel = speedlevel
-        self.nmapargs = f'-T{self.speedlevel}'  # <-- Initialize nmapargs based on speed level
+        self.nmapargs = f'-T{self.speedlevel}'  # Initialize nmapargs based on speed level
 
     def get_host_ranges(self):
         """ Retrieves the network ranges for scanning. """
@@ -79,10 +80,19 @@ class sniffer:
         hostlist = ' '.join(cidr)
         return hostlist
 
+    def expand_cidr(self, hosts):
+        """ Expands a CIDR range into individual IPs. """
+        try:
+            ip_network = ipaddress.ip_network(hosts, strict=False)  # Expand network range
+            return [str(ip) for ip in ip_network.hosts()]
+        except ValueError as e:
+            logger.error(f"Invalid CIDR notation: {hosts} - {e}")
+            return []
+
     def scan_host(self, host):
         """ Scans a single host and returns NFS/SMB open ports. """
         open_ports = {'nfs': False, 'smb': False}
-        self.nm.scan(host, '111,445', arguments=self.nmapargs)  # Now nmapargs is defined
+        self.nm.scan(host, '111,445', arguments=self.nmapargs)
         for proto in self.nm[host].all_protocols():
             lport = self.nm[host][proto].keys()
             for port in lport:
@@ -104,8 +114,16 @@ class sniffer:
         else:
             hosts = self.hosts
 
+        # Expand CIDR ranges into individual IP addresses
+        expanded_hosts = []
+        for host in hosts.split():
+            if '/' in host:  # If CIDR notation is present
+                expanded_hosts.extend(self.expand_cidr(host))
+            else:
+                expanded_hosts.append(host)
+
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            future_to_host = {executor.submit(self.scan_host, host): host for host in hosts.split()}
+            future_to_host = {executor.submit(self.scan_host, host): host for host in expanded_hosts}
             for future in as_completed(future_to_host):
                 host, open_ports = future.result()
                 if open_ports['nfs']:
