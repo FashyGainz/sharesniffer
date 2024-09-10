@@ -31,6 +31,7 @@ import subprocess
 import os
 import sys
 from random import randint
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 SHARESNIFFER_VERSION = '0.1-b.8'
