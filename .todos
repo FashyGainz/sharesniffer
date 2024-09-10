@@ -1,6 +1,7 @@
-- Add concurrency
+- Add concurrency *COMPLETED 091024*
   - sniffer
   - specify threads
   - concurrent futures
 
-- Add extra error handling and logging
+
+- Add extra error handling and logging *COMPLETED 091024*
