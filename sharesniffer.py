@@ -47,7 +47,34 @@ class sniffer:
         self.excludehosts = excludehosts
         self.nm = nmap.PortScanner()
         self.max_workers = max_workers
-        # Snipped the speedlevel setup for brevity (it remains the same)
+
+    def get_host_ranges(self):
+        """ Retrieves the network ranges for scanning. """
+        cidr = []
+        for ifacename in netifaces.interfaces():
+            try:
+                addrs = netifaces.ifaddresses(ifacename)
+                addr = addrs[netifaces.AF_INET]
+                ip = addr[0]['addr']
+            except KeyError:
+                continue
+            if ip == '127.0.0.1' or ip == 'fe80::1%lo0':
+                continue
+            try:
+                netmask = addr[0]['netmask'].split('.')
+            except KeyError:
+                cidr.append(ip + '/' + '32')
+                continue
+            ipaddr = ip.split('.')
+            net_start = [str(int(ipaddr[x]) & int(netmask[x]))
+                         for x in range(0, 4)]
+            binary_str = ''
+            for octet in netmask:
+                binary_str += bin(int(octet))[2:].zfill(8)
+            net_size = str(len(binary_str.rstrip('0')))
+            cidr.append('.'.join(net_start) + '/' + net_size)
+        hostlist = ' '.join(cidr)
+        return hostlist
 
     def scan_host(self, host):
         """ Scans a single host and returns NFS/SMB open ports. """
@@ -64,6 +91,7 @@ class sniffer:
         return host, open_ports
 
     def sniff_hosts(self):
+        """ Sniffs for NFS/SMB shares on the network. """
         hostlist_nfs = []
         hostlist_smb = []
         if not self.hosts:
@@ -73,7 +101,6 @@ class sniffer:
         else:
             hosts = self.hosts
 
-        # Use ThreadPoolExecutor with max_workers set by user
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             future_to_host = {executor.submit(self.scan_host, host): host for host in hosts.split()}
             for future in as_completed(future_to_host):
