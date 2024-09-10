@@ -39,7 +39,7 @@ __version__ = SHARESNIFFER_VERSION
 
 
 class sniffer:
-    def __init__(self, hosts=None, excludehosts=None, nfs=False, smb=False, smbuser='guest', smbpass='', max_workers=10):
+    def __init__(self, hosts=None, excludehosts=None, nfs=False, smb=False, smbuser='guest', smbpass='', max_workers=10, speedlevel=4):
         self.hosts = hosts
         self.nfs = nfs
         self.smb = smb
@@ -48,6 +48,8 @@ class sniffer:
         self.excludehosts = excludehosts
         self.nm = nmap.PortScanner()
         self.max_workers = max_workers
+        self.speedlevel = speedlevel
+        self.nmapargs = f'-T{self.speedlevel}'  # <-- Initialize nmapargs based on speed level
 
     def get_host_ranges(self):
         """ Retrieves the network ranges for scanning. """
@@ -80,7 +82,7 @@ class sniffer:
     def scan_host(self, host):
         """ Scans a single host and returns NFS/SMB open ports. """
         open_ports = {'nfs': False, 'smb': False}
-        self.nm.scan(host, '111,445', arguments=self.nmapargs)
+        self.nm.scan(host, '111,445', arguments=self.nmapargs)  # Now nmapargs is defined
         for proto in self.nm[host].all_protocols():
             lport = self.nm[host][proto].keys()
             for port in lport:
