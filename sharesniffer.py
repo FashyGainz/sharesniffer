@@ -97,18 +97,28 @@ class sniffer:
         return expanded_ips
 
     def scan_host(self, host):
-        """ Scans a single host and returns NFS/SMB open ports. """
-        open_ports = {'nfs': False, 'smb': False}
-        self.nm.scan(host, '111,445', arguments=self.nmapargs)
-        for proto in self.nm[host].all_protocols():
-            lport = self.nm[host][proto].keys()
-            for port in lport:
-                if self.nm[host][proto][port]['state'] == 'open':
-                    if port == 111:
-                        open_ports['nfs'] = True
-                    if port == 445:
-                        open_ports['smb'] = True
+    """ Scans a single host and returns NFS/SMB open ports. """
+    open_ports = {'nfs': False, 'smb': False}
+    logger.info(f"Scanning host {host}...")
+    
+    # Perform the Nmap scan
+    self.nm.scan(host, '111,445', arguments=self.nmapargs)
+
+    # Check if the host is in the scan results
+    if host not in self.nm.all_hosts():
+        logger.warning(f"No scan results for host: {host}")
         return host, open_ports
+
+    # Proceed only if the host exists in the scan results
+    for proto in self.nm[host].all_protocols():
+        lport = self.nm[host][proto].keys()
+        for port in lport:
+            if self.nm[host][proto][port]['state'] == 'open':
+                if port == 111:
+                    open_ports['nfs'] = True
+                if port == 445:
+                    open_ports['smb'] = True
+    return host, open_ports
 
     def sniff_hosts(self):
         """ Sniffs for NFS/SMB shares on the network. """
